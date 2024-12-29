@@ -1,0 +1,25 @@
+-- SOLUTION 
+with cte as
+    (select * 
+    , case when host_goals > guest_goals then 3 
+         when host_goals < guest_goals then 0 
+         else 1 end host_score
+    , case when guest_goals > host_goals then 3 
+         when guest_goals < host_goals then 0 
+         else 1 end guest_score
+    from matches),
+  host as
+    (select host_team, sum(host_score) as host_score_total
+    from cte
+    group by host_team),
+  guest as
+    (select guest_team, sum(guest_score) as guest_score_total
+    from cte
+    group by guest_team)
+select coalesce(host_team, guest_team, t.team_id) as team
+, t.team_name
+, coalesce(host_score_total,0) + coalesce(guest_score_total,0) as num_points
+from host h 
+full join guest g on g.guest_team = h.host_team
+right join teams t on t.team_id = coalesce(host_team, guest_team)
+order by num_points desc, team;
